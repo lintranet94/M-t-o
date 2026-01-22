@@ -96,7 +96,28 @@ async function loadSaints() {
 
 loadMeteo();
 loadSaints();
+
+  // ==== Saint du jour via Kalendia API ====
+
+async function loadKalendiaSaint() {
+  try {
+    // Kalendia API – retourne JSON avec saint du jour
+    const res = await fetch("https://www.kalendia.fr/widget/kalendia-widget.min.js?format=json&events=saint-du-jour");
+    const json = await res.json();
+
+    // selon la structure retournée (événements), on récupère
+    const saint = json["saint-du-jour"]?.label || "Saint du jour non trouvé";
+    document.getElementById("saint").innerText = "Saint du jour : " + saint;
+  } catch (err) {
+    document.getElementById("saint").innerText = "Saint du jour indisponible";
+    console.error(err);
+  }
+}
+
+loadKalendiaSaint();
+
 </script>
 
 </body>
 </html>
+
