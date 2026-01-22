@@ -6,102 +6,110 @@
 <title>Météo – Villiers-sur-Marne</title>
 
 <style>
-  body {
+  html, body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f6f8;
+    padding: 0;
+    background: transparent; /* FOND TRANSPARENT */
+    font-family: "Segoe UI", Arial, sans-serif;
   }
 
   .meteo-widget {
-    width: 280px;
+    width: 300px;
     height: 180px;
-    
+    background: transparent; /* FOND TRANSPARENT */
     color: #000000;
-    border-radius: 12px;
-    padding: 14px;
+    border-radius: 0; /* plus d'ombre ni bord arrondi */
+    padding: 10px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+  }
+
+  .meteo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .ville {
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 600;
   }
 
   .temp {
-    font-size: 36px;
+    font-size: 38px;
     font-weight: bold;
-    line-height: 1;
+  }
+
+  .description {
+    font-size: 14px;
+    opacity: 0.9;
   }
 
   .infos {
+    display: flex;
+    justify-content: space-between;
     font-size: 13px;
     opacity: 0.9;
   }
 
-  .footer {
-    font-size: 12px;
-    opacity: 0.8;
-    display: flex;
-    justify-content: space-between;
+  .icon {
+    font-size: 36px;
   }
-
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: transparent; /* IMPORTANT */
-  }
-
-  .meteo-widget {
-    background: rgba(15, 76, 129, 0.85); /* semi-transparent si tu veux */
-    color: #fff;
-    border-radius: 12px;
-    padding: 14px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
 
 </style>
 </head>
-
 <body>
+
 <div class="meteo-widget">
-  <div>
+  <div class="meteo-header">
     <div class="ville">Villiers-sur-Marne</div>
-    <div class="temp" id="temperature">--°C</div>
-    <div class="infos" id="description">Chargement…</div>
+    <div class="icon" id="icon">☀️</div>
   </div>
 
-  <div class="footer">
+  <div class="temp" id="temperature">--°C</div>
+  <div class="description" id="description">Chargement…</div>
+
+  <div class="infos">
     <div id="vent">Vent : -- km/h</div>
     <div id="demain">Demain : --°C</div>
   </div>
 </div>
 
 <script>
-  fetch("https://api.open-meteo.com/v1/forecast?latitude=48.825&longitude=2.508&current_weather=true&daily=temperature_2m_max&timezone=Europe/Paris")
+  fetch("https://api.open-meteo.com/v1/forecast?latitude=48.825&longitude=2.508&current_weather=true&daily=temperature_2m_max,weathercode&timezone=Europe/Paris")
     .then(res => res.json())
     .then(data => {
-      document.getElementById("temperature").innerText =
-        Math.round(data.current_weather.temperature) + "°C";
+      const temp = Math.round(data.current_weather.temperature);
+      document.getElementById("temperature").innerText = temp + "°C";
 
-      document.getElementById("vent").innerText =
-        "Vent : " + Math.round(data.current_weather.windspeed) + " km/h";
+      const vent = Math.round(data.current_weather.windspeed);
+      document.getElementById("vent").innerText = "Vent : " + vent + " km/h";
 
-      document.getElementById("demain").innerText =
-        "Demain : " + Math.round(data.daily.temperature_2m_max[1]) + "°C";
+      const demain = Math.round(data.daily.temperature_2m_max[1]);
+      document.getElementById("demain").innerText = "Demain : " + demain + "°C";
 
-      document.getElementById("description").innerText =
-        "Conditions météo actuelles";
+      const code = data.current_weather.weathercode;
+      const iconEl = document.getElementById("icon");
+      let icon = "☀️";
+      let desc = "Ensoleillé";
+
+      if ([1,2].includes(code)) { icon = "🌤️"; desc = "Partiellement nuageux"; }
+      else if ([3,45,48].includes(code)) { icon = "☁️"; desc = "Nuageux"; }
+      else if ([51,53,55,61,63,65,80,81,82].includes(code)) { icon = "🌧️"; desc = "Pluie"; }
+      else if ([71,73,75,85,86].includes(code)) { icon = "❄️"; desc = "Neige"; }
+      else if ([95,96,99].includes(code)) { icon = "⛈️"; desc = "Orage"; }
+
+      iconEl.innerText = icon;
+      document.getElementById("description").innerText = desc;
+
+    })
+    .catch(error => {
+      document.getElementById("description").innerText = "Météo indisponible";
+      console.error(error);
     });
 </script>
+
 </body>
 </html>
-
-
