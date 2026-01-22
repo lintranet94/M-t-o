@@ -6,63 +6,72 @@
 <title>Météo – Villiers-sur-Marne</title>
 
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: transparent; /* fond transparent */
-    font-family: "Segoe UI", Arial, sans-serif;
-  }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
 
-  .meteo-widget {
-    width: 300px;
-    height: 180px;
-    background: transparent;
-    color: #ffffff;
-    padding: 10px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
+.meteo-widget {
+  width: 260px;              /* 👈 un peu plus large */
+  height: auto;
+  padding: 8px 10px;         /* 👈 espace horizontal léger */
+  box-sizing: border-box;
 
-  /* Texte blanc avec contour léger */
-  .ville, .temp, .description, .infos, .icon {
-    color: #ffffff;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* contour "3D" léger */
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 8px;                  /* 👈 espace vertical par défaut */
+}
 
-  .meteo-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+/* Texte */
+.meteo-widget * {
+  color: #ffffff;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+}
 
-  .ville {
-    font-size: 16px;
-    font-weight: 600;
-  }
+/* HEADER */
+.meteo-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  .temp {
-    font-size: 38px;
-    font-weight: bold;
-  }
+.ville {
+  font-size: 14px;
+  font-weight: 600;
+}
 
-  .description {
-    font-size: 14px;
-  }
+.icon {
+  font-size: 30px;
+}
 
-  .infos {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-  }
+/* CENTRE */
+.main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-  .icon {
-    font-size: 36px;
-  }
+.temp {
+  font-size: 36px;
+  font-weight: bold;
+}
 
+.description {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* INFOS */
+.infos {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
 </style>
 </head>
+
 <body>
 
 <div class="meteo-widget">
@@ -71,50 +80,49 @@
     <div class="icon" id="icon">☀️</div>
   </div>
 
-  <div class="temp" id="temperature">--°C</div>
-  <div class="description" id="description">Chargement…</div>
+  <div class="main">
+    <div class="temp" id="temperature">--°C</div>
+    <div class="description" id="description">Chargement…</div>
+  </div>
 
   <div class="infos">
-    <div id="vent">Vent : -- km/h</div>
-    <div id="demain">Demain : --°C</div>
+    <div id="vent">Vent 💨 -- km/h</div>
+    <div id="demain">📅 Demain : --°C</div>
   </div>
 </div>
 
 <script>
-  fetch("https://api.open-meteo.com/v1/forecast?latitude=48.825&longitude=2.508&current_weather=true&daily=temperature_2m_max,weathercode&timezone=Europe/Paris")
-    .then(res => res.json())
-    .then(data => {
-      const temp = Math.round(data.current_weather.temperature);
-      document.getElementById("temperature").innerText = temp + "°C";
+fetch("https://api.open-meteo.com/v1/forecast?latitude=48.825&longitude=2.508&current_weather=true&daily=temperature_2m_max,weathercode&timezone=Europe/Paris")
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("temperature").innerText =
+      Math.round(data.current_weather.temperature) + "°C";
 
-      const vent = Math.round(data.current_weather.windspeed);
-      document.getElementById("vent").innerText = "Vent : " + vent + " km/h";
+    document.getElementById("vent").innerText =
+      "Vent 💨 " + Math.round(data.current_weather.windspeed) + " km/h";
 
-      const demain = Math.round(data.daily.temperature_2m_max[1]);
-      document.getElementById("demain").innerText = "Demain : " + demain + "°C";
+    document.getElementById("demain").innerText =
+      "📅 Demain : " + Math.round(data.daily.temperature_2m_max[1]) + "°C";
 
-      const code = data.current_weather.weathercode;
-      const iconEl = document.getElementById("icon");
-      let icon = "☀️";
-      let desc = "Ensoleillé";
+    const code = data.current_weather.weathercode;
+    const iconEl = document.getElementById("icon");
 
-      if ([1,2].includes(code)) { icon = "🌤️"; desc = "Partiellement nuageux"; }
-      else if ([3,45,48].includes(code)) { icon = "☁️"; desc = "Nuageux"; }
-      else if ([51,53,55,61,63,65,80,81,82].includes(code)) { icon = "🌧️"; desc = "Pluie"; }
-      else if ([71,73,75,85,86].includes(code)) { icon = "❄️"; desc = "Neige"; }
-      else if ([95,96,99].includes(code)) { icon = "⛈️"; desc = "Orage"; }
+    let icon = "☀️";
+    let desc = "Ensoleillé";
 
-      iconEl.innerText = icon;
-      document.getElementById("description").innerText = desc;
+    if ([1,2].includes(code)) { icon="🌤️"; desc="Partiellement nuageux"; }
+    else if ([3,45,48].includes(code)) { icon="☁️"; desc="Nuageux"; }
+    else if ([51,53,55,61,63,65,80,81,82].includes(code)) { icon="🌧️"; desc="Pluie"; }
+    else if ([71,73,75,85,86].includes(code)) { icon="❄️"; desc="Neige"; }
+    else if ([95,96,99].includes(code)) { icon="⛈️"; desc="Orage"; }
 
-    })
-    .catch(error => {
-      document.getElementById("description").innerText = "Météo indisponible";
-      console.error(error);
-    });
+    iconEl.innerText = icon;
+    document.getElementById("description").innerText = desc;
+  })
+  .catch(() => {
+    document.getElementById("description").innerText = "Météo indisponible";
+  });
 </script>
 
 </body>
 </html>
-
-
