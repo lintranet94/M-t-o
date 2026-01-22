@@ -3,71 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Météo – Villiers-sur-Marne</title>
+<title>Météo + Saint du jour – Villiers‑sur‑Marne</title>
 
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: transparent; /* fond transparent */
-    font-family: "Segoe UI", Arial, sans-serif;
-  }
-
+  html, body { margin: 0; padding: 0; background: transparent; font-family: "Segoe UI", Arial, sans-serif; }
   .meteo-widget {
-    width: 300px;
-    height: 180px;
+    width: 300px; height: 180px;
     background: transparent;
     color: #ffffff;
-    padding: 10px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+    padding: 8px; box-sizing: border-box;
+    display: flex; flex-direction: column;
     justify-content: space-between;
   }
-
-  /* Texte blanc avec contour léger */
-  .ville, .temp, .description, .infos, .icon {
+  .ville, .temp, .description, .infos, .icon, .saint {
     color: #ffffff;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* contour "3D" léger */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
   }
-
-  .meteo-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .ville {
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .temp {
-    font-size: 38px;
-    font-weight: bold;
-  }
-
-  .description {
-    font-size: 14px;
-  }
-
-  .infos {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-  }
-
-  .icon {
-    font-size: 36px;
-  }
-
+  .meteo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+  .ville { font-size: 16px; font-weight: 600; }
+  .temp { font-size: 34px; font-weight: bold; margin: 2px 0; }
+  .description { font-size: 13px; margin-bottom: 2px; }
+  .infos { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px; }
+  .icon { font-size: 32px; }
+  .saint { font-size: 12px; text-align: center; margin-top: 2px; opacity: 0.9; }
 </style>
 </head>
 <body>
 
 <div class="meteo-widget">
   <div class="meteo-header">
-    <div class="ville">Villiers-sur-Marne</div>
+    <div class="ville">Villiers‑sur‑Marne</div>
     <div class="icon" id="icon">☀️</div>
   </div>
 
@@ -78,40 +43,59 @@
     <div id="vent">Vent : -- km/h</div>
     <div id="demain">Demain : --°C</div>
   </div>
+
+  <div class="saint" id="saint">Saint du jour : …</div>
 </div>
 
 <script>
-  fetch("https://api.open-meteo.com/v1/forecast?latitude=48.825&longitude=2.508&current_weather=true&daily=temperature_2m_max,weathercode&timezone=Europe/Paris")
-    .then(res => res.json())
-    .then(data => {
-      const temp = Math.round(data.current_weather.temperature);
-      document.getElementById("temperature").innerText = temp + "°C";
+async function loadMeteo() {
+  try {
+    const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=48.825&longitude=2.508&current_weather=true&daily=temperature_2m_max,weathercode&timezone=Europe/Paris");
+    const data = await res.json();
 
-      const vent = Math.round(data.current_weather.windspeed);
-      document.getElementById("vent").innerText = "Vent : " + vent + " km/h";
+    const temp = Math.round(data.current_weather.temperature);
+    document.getElementById("temperature").innerText = temp + "°C";
+    const vent = Math.round(data.current_weather.windspeed);
+    document.getElementById("vent").innerText = "Vent : " + vent + " km/h";
+    const demain = Math.round(data.daily.temperature_2m_max[1]);
+    document.getElementById("demain").innerText = "Demain : " + demain + "°C";
 
-      const demain = Math.round(data.daily.temperature_2m_max[1]);
-      document.getElementById("demain").innerText = "Demain : " + demain + "°C";
+    const code = data.current_weather.weathercode;
+    let icon="☀️", desc="Ensoleillé";
+    if([1,2].includes(code)){ icon="🌤️"; desc="Partiellement nuageux"; }
+    else if([3,45,48].includes(code)){ icon="☁️"; desc="Nuageux"; }
+    else if([51,53,55,61,63,65,80,81,82].includes(code)){ icon="🌧️"; desc="Pluie"; }
+    else if([71,73,75,85,86].includes(code)){ icon="❄️"; desc="Neige"; }
+    else if([95,96,99].includes(code)){ icon="⛈️"; desc="Orage"; }
 
-      const code = data.current_weather.weathercode;
-      const iconEl = document.getElementById("icon");
-      let icon = "☀️";
-      let desc = "Ensoleillé";
+    document.getElementById("icon").innerText = icon;
+    document.getElementById("description").innerText = desc;
+  } catch(e) {
+    document.getElementById("description").innerText = "Météo indisponible";
+    console.error(e);
+  }
+}
 
-      if ([1,2].includes(code)) { icon = "🌤️"; desc = "Partiellement nuageux"; }
-      else if ([3,45,48].includes(code)) { icon = "☁️"; desc = "Nuageux"; }
-      else if ([51,53,55,61,63,65,80,81,82].includes(code)) { icon = "🌧️"; desc = "Pluie"; }
-      else if ([71,73,75,85,86].includes(code)) { icon = "❄️"; desc = "Neige"; }
-      else if ([95,96,99].includes(code)) { icon = "⛈️"; desc = "Orage"; }
+async function loadSaints() {
+  try {
+    const apiKey = "VOTRECLE"; // ← Remplace par ta vraie clé API
+    const res = await fetch(`https://fetedujour.fr/api/v2/${apiKey}/json-saints`);
+    const json = await res.json();
 
-      iconEl.innerText = icon;
-      document.getElementById("description").innerText = desc;
+    if(json.saints && json.saints.length > 0) {
+      const noms = json.saints.map(s => s.name).join(", ");
+      document.getElementById("saint").innerText = "Saint du jour : " + noms;
+    } else {
+      document.getElementById("saint").innerText = "Saint du jour : introuvable";
+    }
+  } catch(err) {
+    document.getElementById("saint").innerText = "Saint du jour indisponible";
+    console.error(err);
+  }
+}
 
-    })
-    .catch(error => {
-      document.getElementById("description").innerText = "Météo indisponible";
-      console.error(error);
-    });
+loadMeteo();
+loadSaints();
 </script>
 
 </body>
